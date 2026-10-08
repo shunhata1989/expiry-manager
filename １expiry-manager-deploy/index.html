@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>賞味期限マネージャー</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1f2420;--sub:#6b716c;--line:#e3e1da;--pri:#1f7a4d;--priTx:#fff;--red:#c0392b;--org:#d97706;--grn:#1f7a4d;--redBg:#fdeceb;--orgBg:#fef3e0;--grnBg:#e8f5ee;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151816;--card:#1f2421;--tx:#ecefec;--sub:#9aa39d;--line:#2f3632;--pri:#3fb27a;--priTx:#08130d;--red:#ef7a6c;--org:#f0a43a;--grn:#5cc592;--redBg:#3a1f1c;--orgBg:#3a2a12;--grnBg:#16301f}}
+:root[data-theme="dark"]{--bg:#151816;--card:#1f2421;--tx:#ecefec;--sub:#9aa39d;--line:#2f3632;--pri:#3fb27a;--priTx:#08130d;--red:#ef7a6c;--org:#f0a43a;--grn:#5cc592;--redBg:#3a1f1c;--orgBg:#3a2a12;--grnBg:#16301f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 40px}
+h1{font-size:18px;margin:6px 0 10px}
+.tabs{display:flex;gap:6px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:6px 0;z-index:5}
+.tabs button{flex:1;padding:11px;border:1px solid var(--line);background:var(--card);color:var(--tx);border-radius:10px;font-size:15px;font-weight:600}
+.tabs button.on{background:var(--pri);color:var(--priTx);border-color:var(--pri)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+label{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px}
+input,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--tx);font-size:16px;font-family:inherit}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:10px 4px;border:1px solid var(--line);background:var(--bg);color:var(--tx);border-radius:10px;font-size:14px}
+.seg button.on{border-color:var(--pri);background:var(--grnBg);color:var(--grn);font-weight:700}
+.btn{width:100%;padding:13px;border:0;border-radius:12px;background:var(--pri);color:var(--priTx);font-size:16px;font-weight:700;margin-top:12px}
+.btn.sec{background:var(--bg);color:var(--tx);border:1px solid var(--line)}
+.btn:disabled{opacity:.5}
+.photo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--line);border-radius:14px;min-height:150px;overflow:hidden;color:var(--sub);cursor:pointer}
+.photo img{width:100%;max-height:260px;object-fit:contain}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.msg{font-size:13px;margin-top:8px;color:var(--sub)}
+.msg.err{color:var(--red)}.msg.ok{color:var(--grn)}
+.warn{background:var(--orgBg);color:var(--org);border-radius:10px;padding:8px 10px;font-size:13px;margin-top:10px}
+.item{display:flex;gap:10px;align-items:flex-start}
+.badge{flex:none;min-width:64px;text-align:center;border-radius:10px;padding:6px 4px;font-weight:800;font-size:13px}
+.b-red{background:var(--redBg);color:var(--red)}.b-org{background:var(--orgBg);color:var(--org)}.b-grn{background:var(--grnBg);color:var(--grn)}
+.badge small{display:block;font-weight:500;font-size:11px}
+.meta{font-size:12.5px;color:var(--sub)}
+.name{font-weight:700;font-size:16px}
+.acts{display:flex;gap:6px;margin-top:8px}
+.acts button{flex:1;padding:8px;border:1px solid var(--line);background:var(--bg);color:var(--tx);border-radius:8px;font-size:13px}
+.hl{border-color:var(--org)!important;background:var(--orgBg)!important}
+details{margin-top:10px;font-size:12px;color:var(--sub)}pre{white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:220px;overflow:auto;margin:6px 0 0}
+.aibar{border-radius:12px;padding:10px 12px;font-size:13.5px;margin:8px 0;border:1px solid var(--line);background:var(--card)}.aibar.ok{background:var(--grnBg);color:var(--grn)}.aibar.ng{background:var(--redBg);color:var(--red)}.aibar button{margin-top:8px;padding:7px 12px;border-radius:8px;border:1px solid currentColor;background:transparent;color:inherit;font-size:13px}
+.empty{text-align:center;color:var(--sub);padding:30px 0}
+.tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-right:4px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>📦 賞味期限マネージャー <span class="meta">(プロトタイプ)</span></h1>
+<div class="tabs"><button id="t1" class="on">＋ 登録</button><button id="t2">一覧 <span id="cnt"></span></button></div>
+
+<div class="aibar" id="ai">AI機能を確認中…</div>
+<section id="v1">
+ <div class="card">
+  <label style="margin-top:0">区分</label>
+  <div class="seg" id="kind">
+   <button data-k="retail" class="on">市販品</button><button data-k="prep">仕込み品</button><button data-k="opened">開封後</button>
+  </div>
+  <label>写真(ラベル・印字が写るように)</label>
+  <div class="photo" id="drop"><span id="ph">写真を追加してください</span></div>
+  <div class="row" style="margin-top:8px"><button class="btn sec" id="cam" style="margin:0">📷 撮影</button><button class="btn sec" id="gal" style="margin:0">🖼 写真を選択</button></div>
+  <input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
+  <input type="file" id="fileGal" accept="image/*" hidden>
+  <button class="btn" id="read" disabled>AIで読み取る</button>
+  <div class="msg" id="rmsg"></div>
+  <details id="dbg" open><summary>診断情報(読み取りがうまくいかない時に確認)</summary><pre id="dbgPre">待機中</pre></details>
+ </div>
+
+ <div class="card">
+  <b>内容の確認・修正</b>
+  <label>品名</label><input id="name" placeholder="例:牛乳 1L">
+  <div id="shelfBox" style="display:none">
+   <label id="shelfLbl">保存可能日数</label>
+   <div class="row"><input id="days" type="number" min="0" inputmode="numeric" placeholder="日数"><button class="btn sec" id="calc" style="margin:0">今日から計算</button></div>
+   <div class="msg" id="shelfHint"></div>
+  </div>
+  <div class="row">
+   <div><label>期限の種類</label><select id="etype"><option value="best_before">賞味期限</option><option value="use_by">消費期限</option></select></div>
+   <div><label>期限日</label><input id="exp" type="date"></div>
+  </div>
+  <div class="row">
+   <div><label>数量</label><input id="qty" placeholder="例:2本"></div>
+   <div><label>保管場所</label><select id="loc"><option>冷蔵</option><option>冷凍</option><option>常温</option></select></div>
+  </div>
+  <div class="warn" id="warn" style="display:none"></div>
+  <button class="btn" id="save">登録する</button>
+  <div class="msg" id="smsg"></div>
+ </div>
+</section>
+
+<section id="v2" style="display:none">
+ <div class="row" style="margin:6px 0"><select id="filter"><option value="active">使用中のみ</option><option value="all">すべて(履歴含む)</option></select></div>
+ <div id="list"></div>
+</section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const KEY="expiry-items-v1";
+let items=[],kind="retail",photo=null,printedExp=null,sample=null,canImg=false;
+const KN={retail:"市販品",prep:"仕込み品",opened:"開封後"};
+const pad=n=>String(n).padStart(2,"0");
+const fmt=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const addDays=(n)=>{const d=today();d.setDate(d.getDate()+n);return d};
+const diff=s=>Math.round((new Date(s+"T00:00:00")-today())/864e5);
+
+function load(){try{items=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){items=[]}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function tab(n){$("v1").style.display=n==1?"":"none";$("v2").style.display=n==2?"":"none";$("t1").classList.toggle("on",n==1);$("t2").classList.toggle("on",n==2);if(n==2)render()}
+$("t1").onclick=()=>tab(1);$("t2").onclick=()=>tab(2);
+
+document.querySelectorAll("#kind button").forEach(b=>b.onclick=()=>{
+  kind=b.dataset.k;document.querySelectorAll("#kind button").forEach(x=>x.classList.toggle("on",x===b));
+  $("shelfBox").style.display=kind==="retail"?"none":"";
+  $("shelfLbl").textContent=kind==="prep"?"仕込み後の保存可能日数":"開封後の保存可能日数";
+  $("shelfHint").textContent=kind==="prep"?"仕込み日(今日)+日数で期限を計算します。":"開封日(今日)+日数で計算。印字の期限がある場合は早い方を採用します。";
+  if(kind==="prep"&&$("etype").value==="best_before")$("etype").value="use_by";
+  check();
+});
+
+$("read").onclick=async()=>{
+  const img=photoBlob||photo;
+  if(!img){$("rmsg").className="msg err";$("rmsg").textContent="先に写真を選んでください。";return}
+  if(!sample){$("rmsg").className="msg err";$("rmsg").textContent="⚠ AI機能が無効です。共有URLを直接開かず、Claudeアプリ/claude.aiの会話内の公開カードから開いてください。";dbg("sample=null");return}
+  const b=$("read");b.disabled=true;$("rmsg").className="msg";$("rmsg").textContent="AIが画像を解析中…(10〜60秒かかることがあります)";
+  const prompt=`あなたは飲食店の在庫管理アシスタントです。添付した1枚の写真は食品のパッケージ/ラベルです。写真に写っている文字を読み取り、品名・期限・数量を抽出してください。
+今日の日付は${fmt(today())}です。年が省略・2桁の表記(例:26.10.15, 10.15.26, 15OCT26)は常識的に補完し、YYYY-MM-DDで出力してください。
+注意: 「製造年月日」「製造日」「加工日」は期限ではありません。expiry_dateには入れず、manufactured_dateへ。
+「賞味期限」「品質保持期限」→best_before、「消費期限」→use_byとしてください。
+数量は、パッケージに表記された内容量・入数(例:1L、500g×2、12本入)をquantityに。
+読み取れない項目はnullにしてください。推測で日付を作らないこと。
+前置きや説明は書かず、次の形式のJSONオブジェクト1つだけを返してください:
+{"name":"品名","expiry_date":"YYYY-MM-DD"|null,"expiry_kind":"best_before"|"use_by"|null,"quantity":"内容量・入数"|null,"manufactured_date":"YYYY-MM-DD"|null,"confidence":"high"|"low","note":"不安があれば短く(日本語)"}`;
+  try{
+    const lim=await sample.limits().catch(()=>null);
+    dbg("limits.images: "+JSON.stringify(lim&&lim.images||null));
+    if(!lim||!lim.images)throw {code:"images_unavailable",message:"この環境は画像入力に対応していません"};
+    dbg("送信: "+img.type+" "+Math.round(img.size/1024)+"KB");
+    const res=await sample(prompt,{images:img,cache:false,onText:({text})=>{$("rmsg").textContent="解析中… "+text.length+"文字受信"}});
+    const raw=res.text||"";dbg("AI返答(生): "+raw.slice(0,600));
+    const i=raw.indexOf("{"),j=raw.lastIndexOf("}");
+    if(i<0||j<i)throw {code:"no_json",message:"JSONが返りませんでした"};
+    const r=JSON.parse(raw.slice(i,j+1));
+    clearHl();const hit=(id,v)=>{$(id).value=v;$(id).classList.add("hl")};
+    if(r.name)hit("name",r.name);
+    if(r.quantity)hit("qty",r.quantity);
+    if(r.expiry_date&&/^\d{4}-\d{2}-\d{2}$/.test(r.expiry_date)){printedExp=r.expiry_date;hit("exp",r.expiry_date)}else printedExp=null;
+    if(r.expiry_kind==="best_before"||r.expiry_kind==="use_by")hit("etype",r.expiry_kind);
+    const nothing=!r.name&&!r.expiry_date&&!r.quantity;
+    const low=nothing||r.confidence==="low"||!r.expiry_date;
+    $("rmsg").className="msg "+(low?"err":"ok");
+    $("rmsg").textContent=nothing?"⚠ 読み取れませんでした。ラベルが大きく写るように撮り直すか、手入力してください。":
+      (low?"⚠ 自信が低い/期限が読めません。黄色の欄を必ず目視で確認してください。":"✓ 読み取り完了。黄色の欄が自動入力です。内容を確認してから登録してください。")+(r.note?" "+r.note:"");
+    check();
+  }catch(e){
+    dbg("エラー: code="+(e&&e.code)+" msg="+(e&&e.message)+(e&&e.text?" partial="+String(e.text).slice(0,200):""));
+    const m={not_granted:"AI利用の許可が出ていません。許可ダイアログで「許可」を選んでください。",images_unavailable:"この環境では画像をAIに送れません。",image_rejected:"画像がAIに受け付けられませんでした(形式・サイズ)。",rate_limited:"短時間に多く呼び出しました。少し待って再試行してください。",no_json:"AIの返答を解析できませんでした。もう一度試してください。"}[e&&e.code];
+    $("rmsg").className="msg err";
+    $("rmsg").textContent=(m||"読み取りに失敗しました。")+" [コード: "+(e&&e.code||"不明")+"]";
+  }
+  b.disabled=false;
+};
+
+$("calc").onclick=()=>{
+  const n=parseInt($("days").value,10);if(isNaN(n))return;
+  let d=fmt(addDays(n));
+  if(kind==="opened"&&printedExp&&printedExp<d)d=printedExp;
+  $("exp").value=d;check();
+};
+
+function check(){
+  const w=$("warn"),v=$("exp").value;let m="";
+  if(v){const d=diff(v);if(d<0)m="この期限はすでに過ぎています。日付の読み間違いがないか確認してください。";else if(d>730)m="期限が2年以上先です。年の読み間違いがないか確認してください。"}
+  if(kind==="opened"&&printedExp&&v&&v>printedExp)m="開封後の期限が、印字の期限("+printedExp+")より後になっています。";
+  w.style.display=m?"":"none";w.textContent=m;
+}
+$("exp").oninput=check;
+
+$("save").onclick=()=>{
+  const name=$("name").value.trim(),exp=$("exp").value;
+  if(!name||!exp){$("smsg").className="msg err";$("smsg").textContent="品名と期限日を入力してください。";return}
+  items.push({id:Date.now().toString(36),name,exp,etype:$("etype").value,kind,qty:$("qty").value.trim(),loc:$("loc").value,added:fmt(today()),status:"active"});
+  persist();
+  ["name","exp","qty","days"].forEach(i=>$(i).value="");
+  photo=null;printedExp=null;$("drop").innerHTML='<span id="ph">写真を追加してください</span>';clearHl();$("read").disabled=true;$("rmsg").textContent="";$("warn").style.display="none";
+  $("smsg").className="msg ok";$("smsg").textContent="✓ 登録しました:"+name;
+  updCount();
+};
+let prevUrl=null,photoBlob=null;
+const dbgLines=[];
+function dbg(m){dbgLines.push(m);if(dbgLines.length>30)dbgLines.shift();$("dbgPre").textContent=dbgLines.join("\n")}
+async function toJpeg(file){
+  let bmp;
+  try{bmp=await createImageBitmap(file,{imageOrientation:"from-image"})}
+  catch(e){
+    bmp=await new Promise((ok,ng)=>{const im=new Image(),u=URL.createObjectURL(file);im.onload=()=>ok(im);im.onerror=()=>ng(new Error("画像をデコードできません"));im.src=u});
+  }
+  const w0=bmp.width||bmp.naturalWidth,h0=bmp.height||bmp.naturalHeight,k=Math.min(1,1600/Math.max(w0,h0));
+  const c=document.createElement("canvas");c.width=Math.round(w0*k);c.height=Math.round(h0*k);
+  c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  const blob=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.88));
+  if(!blob)throw new Error("JPEG変換に失敗");
+  return {blob,w:c.width,h:c.height};
+}
+async function setPhoto(f){
+  if(!f)return;photo=f;photoBlob=null;$("read").disabled=true;$("rmsg").className="msg";
+  dbg("選択: "+(f.name||"camera")+" / "+(f.type||"type不明")+" / "+Math.round(f.size/1024)+"KB");
+  try{
+    const r=await toJpeg(f);photoBlob=r.blob;
+    dbg("変換後: image/jpeg "+r.w+"x"+r.h+" / "+Math.round(r.blob.size/1024)+"KB");
+  }catch(e){dbg("変換失敗("+e.message+")→元ファイルをそのまま送ります");photoBlob=f}
+  if(prevUrl)URL.revokeObjectURL(prevUrl);
+  prevUrl=URL.createObjectURL(photoBlob);$("drop").innerHTML='<img src="'+prevUrl+'">';
+  $("read").disabled=false;
+  $("rmsg").textContent=sample?"「AIで読み取る」を押してください。":"⚠ この開き方ではAI読み取りが使えません(上の赤い表示を確認してください)。";
+}
+function bindFile(){
+  $("cam").onclick=()=>$("fileCam").click();$("gal").onclick=()=>$("fileGal").click();
+  $("fileCam").onchange=$("fileGal").onchange=e=>{const inp=e.target,f=inp.files[0];setPhoto(f).then(()=>{inp.value=""})};
+  ["name","exp","qty","etype"].forEach(i=>{const el=$(i);el.addEventListener("input",()=>el.classList.remove("hl"));el.addEventListener("change",()=>el.classList.remove("hl"))});
+}
+function clearHl(){["name","exp","qty","etype"].forEach(i=>$(i).classList.remove("hl"))}
+
+function updCount(){const n=items.filter(i=>i.status==="active"&&diff(i.exp)<=3).length;$("cnt").textContent=n?"⚠"+n:""}
+
+function render(){
+  const all=$("filter").value==="all";
+  const arr=items.filter(i=>all||i.status==="active").sort((a,b)=>(a.status==="active"?0:1)-(b.status==="active"?0:1)||a.exp.localeCompare(b.exp));
+  if(!arr.length){$("list").innerHTML='<div class="empty">登録された商品はありません</div>';return}
+  $("list").innerHTML=arr.map(i=>{
+    const d=diff(i.exp),done=i.status!=="active";
+    let cls="b-grn",t=d+"日",s="あと";
+    if(d<0){cls="b-red";t=Math.abs(d)+"日";s="超過"}else if(d===0){cls="b-red";t="本日";s="まで"}else if(d<=3)cls="b-org";
+    if(done){cls="b-grn";t=i.status==="used"?"使用済":"廃棄";s=""}
+    return `<div class="card" style="${done?"opacity:.6":""}"><div class="item">
+     <div class="badge ${cls}"><small>${s}</small>${t}</div>
+     <div style="flex:1;min-width:0"><div class="name">${esc(i.name)}</div>
+     <div class="meta"><span class="tag">${KN[i.kind]}</span>${i.etype==="use_by"?"消費":"賞味"}期限 ${i.exp}</div>
+     <div class="meta">${esc(i.loc)}${i.qty?" ・ "+esc(i.qty):""} ・ 登録 ${i.added}</div>
+     ${done?"":`<div class="acts"><button data-a="used" data-id="${i.id}">使い切り</button><button data-a="waste" data-id="${i.id}">廃棄</button><button data-a="del" data-id="${i.id}">削除</button></div>`}
+     </div></div></div>`}).join("");
+}
+$("list").onclick=e=>{const b=e.target.closest("button[data-a]");if(!b)return;
+  const it=items.find(x=>x.id===b.dataset.id);if(!it)return;
+  if(b.dataset.a==="del")items=items.filter(x=>x!==it);else it.status=b.dataset.a==="used"?"used":"waste";
+  persist();updCount();render()};
+$("filter").onchange=render;
+
+load();updCount();bindFile();
+function makeShim(){
+  const b64=b=>new Promise((ok,ng)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=()=>ng(new Error("画像の読み込みに失敗"));r.readAsDataURL(b)});
+  const pw=()=>{try{return localStorage.getItem("app-pw")||""}catch(e){return ""}};
+  const call=async(input,opts={})=>{
+    const body={prompt:String(input)};
+    if(opts.images){body.image=await b64(opts.images);body.mediaType=opts.images.type||"image/jpeg"}
+    const send=()=>fetch("/api/read",{method:"POST",headers:{"content-type":"application/json","x-app-password":pw()},body:JSON.stringify(body)});
+    let r;try{r=await send()}catch(e){throw {code:"network",message:"サーバーに接続できません"}}
+    if(r.status===401){const p=prompt("パスワードを入力してください");if(!p)throw {code:"unauthorized",message:"パスワードが必要です"};try{localStorage.setItem("app-pw",p)}catch(e){}r=await send()}
+    if(r.status===401){try{localStorage.removeItem("app-pw")}catch(e){}}
+    let j={};try{j=await r.json()}catch(e){}
+    if(!r.ok)throw {code:r.status===401?"unauthorized":"server_"+r.status,message:j.error||"サーバーエラー"};
+    return {text:j.text||""};
+  };
+  call.limits=async()=>({images:true});
+  return call;
+}
+function setAi(cls,html){const el=$("ai");el.className="aibar "+cls;el.innerHTML=html;const t=$("aiTest");if(t)t.onclick=aiTest}
+async function aiTest(){
+  const t=$("aiTest");t.disabled=true;t.textContent="テスト中…";
+  try{const r=await sample("「OK」とだけ返してください。",{modelTier:"quick",cache:false});
+    setAi("ok","✅ AI接続テスト成功(返答: "+esc(r.text.slice(0,20))+")。写真の読み取りを試せます。")}
+  catch(e){dbg("接続テスト失敗: "+(e&&e.code)+" "+(e&&e.message));
+    setAi("ng","❌ AI接続テスト失敗 [コード: "+esc(e&&e.code||"不明")+"] "+esc(e&&e.message||"")+'<br><button id="aiTest">もう一度テスト</button>')}
+}
+(async()=>{
+  sample=makeShim();
+  if(!sample){
+    dbg("起動: sample=null");
+    setAi("ng","❌ <b>この開き方ではAI読み取りが使えません。</b><br>共有URLをSafari/Chromeなどで直接開くと、AI機能は無効になります。Claudeアプリまたはclaude.aiの<b>会話の中の公開カード</b>から開いてください(手入力での登録は使えます)。");
+    return;
+  }
+  try{const l=await sample.limits();canImg=!!l.images;dbg("起動: sample利用可 / 画像入力="+(canImg?"可":"不可"))}catch(e){canImg=false}
+  if(!canImg)setAi("ng","❌ この環境はAIへの画像送信に対応していません(手入力は可能です)。");
+  else setAi("","AI読み取り:利用可能です(サーバー経由)。<br><button id=\"aiTest\">AI接続テスト</button>");
+})();
+</script>
+</body>
+</html>
